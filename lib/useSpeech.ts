@@ -149,7 +149,7 @@ export function useSpeech() {
         setFailed(lang);
       };
 
-      const run = async (i: number) => {
+      const run = (i: number): void => {
         if (my !== session.current) return;
         if (i >= items.length) {
           setSpeaking(false);
@@ -184,23 +184,21 @@ export function useSpeech() {
           return sayNext();
         }
 
-        // 2) No device voice → natural voice from the server (/api/tts).
-        if (await hasCloudVoice()) {
+        // 2) No device voice → voice audio from the app's server (/api/tts).
+        {
           const el = audio.current ?? (audio.current = new Audio());
           const playNext = () => {
             if (my !== session.current) return;
             if (k >= parts.length) return void run(i + 1);
-            const q = new URLSearchParams({ lang, text: parts[k++], rate: String(opts.rate ?? 1) });
+            const q = new URLSearchParams({ lang, text: parts[k++] });
             el.src = `/api/tts?${q}`;
+            el.playbackRate = opts.rate ?? 1;
             el.onended = playNext;
             el.onerror = () => fail(lang);
             el.play().catch(() => fail(lang));
           };
           return playNext();
         }
-
-        // 3) Nothing can speak this language here.
-        fail(lang);
       };
       void run(start);
     },
