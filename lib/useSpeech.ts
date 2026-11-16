@@ -11,9 +11,10 @@ type Options = {
 };
 
 /** Split text into small utterances — long ones are cut off by some browsers. */
-function chunk(text: string, max = 180): string[] {
-  const clean = text.replace(/\s+/g, " ").trim();
-  if (!clean) return [];
+export function chunk(text: string, max = 180): string[] {
+  // drop emoji/symbols the voice can't say
+  const clean = text.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, " ").replace(/\s+/g, " ").trim();
+  if (!clean || !/\p{L}/u.test(clean)) return [];
   if (clean.length <= max) return [clean];
   const sentences = clean.split(/(?<=[.!?;:।॥෴”"’)])\s+/);
   const out: string[] = [];
@@ -143,6 +144,7 @@ export function useSpeech() {
       setSpeaking(true);
       setFailed(null);
 
+      let errors = 0;
       const fail = (lang: string) => {
         if (my !== session.current) return;
         setSpeaking(false);
@@ -194,8 +196,15 @@ export function useSpeech() {
             el.src = `/api/tts?${q}`;
             el.playbackRate = opts.rate ?? 1;
             el.onended = playNext;
-            el.onerror = () => fail(lang);
-            el.play().catch(() => fail(lang));
+            // A piece that can't be spoken (e.g. a symbol) is skipped; stop only if several fail in a row.
+            const skip = () => {
+              if (my !== session.current) return;
+              if (++errors >= 3) return fail(lang);
+              playNext();
+            };
+            el.onerror = skip;
+            el.onplaying = () => (errors = 0);
+            el.play().catch((e: DOMException) => (e?.name === "NotAllowedError" ? fail(lang) : undefined));
           };
           return playNext();
         }

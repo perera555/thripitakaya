@@ -20,7 +20,7 @@ export function PageSpeak() {
     const lines = (main?.innerText ?? "")
       .split(/\n+/)
       .map((s) => s.trim())
-      .filter((s) => s.length > 1 && !/^[\d\s/·:]+$/.test(s));
+      .filter((s) => s.length > 1 && /\p{L}/u.test(s));
     const unique = lines.filter((s, i) => lines.indexOf(s) === i).slice(0, 120);
     const speech = LANGS.find((l) => l.code === lang)!.speech;
     sp.speak(

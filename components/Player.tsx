@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Pause, Play, SkipBack, SkipForward, Square } from "lucide-react";
+import { AlertTriangle, Download, Pause, Play, SkipBack, SkipForward, Square } from "lucide-react";
+import { downloadAudio } from "@/lib/audioExport";
 import { findVoice, useSpeech, type SpeechItem } from "@/lib/useSpeech";
 import { LANGS } from "@/lib/i18n";
 import { useApp } from "./providers";
@@ -74,7 +75,7 @@ export function usePlayer(items: SpeechItem[]) {
     return lacking;
   }, [items, sp.voices, sp.cloud, sp.failed]);
 
-  return { ...sp, index, setIndex, playing, rate, start, pause, toggle, next, prev, stop, changeRate, missing, count: items.length };
+  return { ...sp, items, index, setIndex, playing, rate, start, pause, toggle, next, prev, stop, changeRate, missing, count: items.length };
 }
 
 const RATES = [0.75, 1, 1.25, 1.5];
@@ -121,19 +122,63 @@ export function PlayerBar({ p, big = false, label }: { p: PlayerState; big?: boo
         </div>
       </div>
       <div className="mt-3 flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-card-2">
-          <div className="h-full rounded-full bg-gradient-to-r from-gold-2 to-saffron transition-all" style={{ width: `${pct}%` }} />
-        </div>
+        <input
+          type="range"
+          min={0}
+          max={Math.max(0, p.count - 1)}
+          value={Math.min(p.index, Math.max(0, p.count - 1))}
+          onChange={(e) => (p.playing ? p.start(Number(e.target.value)) : p.setIndex(Number(e.target.value)))}
+          className="seek flex-1"
+          style={{ ["--pct" as string]: `${pct}%` }}
+          aria-label={t("nowReading")}
+        />
         <span className="text-xs tabular-nums text-muted">
           {Math.min(p.index + 1, p.count)} / {p.count}
         </span>
       </div>
+      <DownloadAudio p={p} name={label} />
       {label && <p className="mt-2 text-center text-xs text-muted">{label}</p>}
       {p.missing.length > 0 && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-saffron/10 p-2.5 text-xs text-muted">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-saffron" />
           <span>{t("noVoice", { lang: p.missing.map((m) => LANGS.find((l) => m.startsWith(l.code))?.label ?? m).join(", ") })}</span>
         </p>
+      )}
+    </div>
+  );
+}
+
+/** Records the spoken text into one MP3 file the user can keep (plays in VLC or any player). */
+function DownloadAudio({ p, name }: { p: PlayerState; name?: string }) {
+  const { t } = useApp();
+  const [prog, setProg] = useState<{ done: number; total: number } | null>(null);
+  const ctrl = useRef<AbortController | null>(null);
+  useLayoutEffect(() => () => ctrl.current?.abort(), []);
+  if (!p.count) return null;
+
+  const run = async () => {
+    if (prog) {
+      ctrl.current?.abort();
+      setProg(null);
+      return;
+    }
+    ctrl.current = new AbortController();
+    setProg({ done: 0, total: 1 });
+    const file = (name || document.title.split("·")[0] || "tripitaka").trim().replace(/[\\/:*?"<>|]+/g, " ").slice(0, 60);
+    await downloadAudio(p.items, file, (done, total) => setProg({ done, total }), ctrl.current.signal);
+    setProg(null);
+  };
+
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <button className="btn btn-ghost px-3 py-1.5 text-xs" onClick={run}>
+        {prog ? <Square className="h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5 text-gold" />}
+        {prog ? `${t("stop")} · ${Math.round((prog.done / prog.total) * 100)}%` : t("downloadAudio")}
+      </button>
+      {prog && (
+        <div className="h-1 flex-1 overflow-hidden rounded-full bg-card-2">
+          <div className="h-full bg-gold transition-all" style={{ width: `${(prog.done / prog.total) * 100}%` }} />
+        </div>
       )}
     </div>
   );

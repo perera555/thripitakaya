@@ -246,6 +246,7 @@ const S = {
   },
   meaning: { si: "අර්ථය", en: "Meaning", ta: "பொருள்", es: "Significado" },
   playAll: { si: "සියල්ල අසන්න", en: "Play all", ta: "அனைத்தையும் கேள்", es: "Reproducir todo" },
+  downloadAudio: { si: "හඬ බාගන්න (MP3)", en: "Download audio (MP3)", ta: "ஒலியைப் பதிவிறக்கு (MP3)", es: "Descargar audio (MP3)" },
   saveOffline: { si: "නොබැඳිව සුරකින්න", en: "Save offline", ta: "ஆஃப்லைனில் சேமி", es: "Guardar sin conexión" },
   savedOk: { si: "සුරැකිණි ✓", en: "Saved ✓", ta: "சேமிக்கப்பட்டது ✓", es: "Guardado ✓" },
   download: { si: "බාගන්න", en: "Download", ta: "பதிவிறக்கு", es: "Descargar" },

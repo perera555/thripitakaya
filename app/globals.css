@@ -372,6 +372,31 @@ body {
 
 }
 
+/* VLC-style seek bar */
+.seek {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--gold-2), var(--saffron)) 0 / var(--pct, 0%) 100% no-repeat, var(--card-2);
+  cursor: pointer;
+}
+.seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold-2);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--gold) 70%, transparent);
+}
+.seek::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gold-2);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

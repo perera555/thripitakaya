@@ -241,7 +241,15 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
               ["listen", t("listen"), Headphones],
               ["readlisten", t("readListen"), null],
             ] as const).map(([m, label, Icon]) => (
-              <button key={m} role="tab" aria-selected={mode === m} onClick={() => setMode(m)} className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold ${mode === m ? "bg-gradient-to-br from-gold-2 to-gold text-[#1d1205]" : "text-muted"}`}>
+              <button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => {
+                  setMode(m);
+                  if (m === "read") player.pause();
+                  else if (!player.playing) player.start(player.index);
+                }} className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold ${mode === m ? "bg-gradient-to-br from-gold-2 to-gold text-[#1d1205]" : "text-muted"}`}>
                 {Icon && <Icon className="h-4 w-4" />}
                 {label}
               </button>
