@@ -1,5 +1,5 @@
 /* Tripitaka service worker: offline app shell, cached texts and thumbnails. */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
 const TEXTS = "texts"; // SuttaCentral API responses (kept across versions)
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Next.js static assets: cache first.
-  if (url.origin === self.location.origin && (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/pwa/"))) {
+  if (url.origin === self.location.origin && (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/pwa/") || url.pathname.startsWith("/sc/"))) {
     event.respondWith(
       caches.match(req).then(
         (hit) =>
@@ -61,7 +61,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // SuttaCentral texts: network first so texts stay fresh, cached for offline.
-  if (url.hostname === "suttacentral.net" && url.pathname.startsWith("/api/")) {
+  if ((url.hostname === "suttacentral.net" && url.pathname.startsWith("/api/")) || (url.origin === self.location.origin && url.pathname.startsWith("/api/sc/"))) {
     event.respondWith(
       fetch(req)
         .then((res) => {

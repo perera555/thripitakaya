@@ -8,7 +8,7 @@ import { LANGS, langLabel, type Lang } from "@/lib/i18n";
 import { paliToSinhala, renderPali, type PaliScript } from "@/lib/pali";
 import { usePref } from "@/lib/usePref";
 import { downloadText, findSavedByUid, saveText, savedKey, type SavedText } from "@/lib/saved";
-import { findVoice, type SpeechItem } from "@/lib/useSpeech";
+import { paliSpeech, useCloudVoice, type SpeechItem } from "@/lib/useSpeech";
 import { videoKeysForUid } from "@/lib/data/texts";
 import { useApp } from "./providers";
 import { PlayerBar, usePlayer } from "./Player";
@@ -44,9 +44,9 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
   const [view, setView] = usePref<View>(`view`, defaultView ?? "both");
   const [script, setScript] = usePref<PaliScript>("script", lang === "si" ? "sinhala" : "roman");
   const [size, setSize] = usePref<number>("fontSize", 19);
-  const [mode, setMode] = usePref<Mode>("mode", "read");
+  const [mode, setMode] = usePref<Mode>("mode2", "readlisten");
   const [author, setAuthor] = useState<string>("");
-  const [listenTo, setListenTo] = useState<"translation" | "pali">("translation");
+  const [listenTo, setListenTo] = useState<"translation" | "pali" | "both">("both");
 
   // 1. load suttaplex
   useEffect(() => {
@@ -131,28 +131,31 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
     window.speechSynthesis.addEventListener("voiceschanged", load);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
-  const paliVoice = useMemo(() => {
-    if (findVoice(voicesReady, "si-LK")) return { lang: "si-LK", sinhala: true };
-    if (findVoice(voicesReady, "it-IT")) return { lang: "it-IT", sinhala: false };
-    return { lang: "en-US", sinhala: false };
-  }, [voicesReady]);
+  const cloud = useCloudVoice();
+  const paliVoice = useMemo(() => paliSpeech(voicesReady, cloud), [voicesReady, cloud]);
 
-  const speakTarget: "translation" | "pali" = effView === "pali" ? "pali" : effView === "translation" ? "translation" : listenTo;
+  const speakTarget: "translation" | "pali" | "both" = effView === "pali" ? "pali" : effView === "translation" ? "translation" : listenTo;
+
+  /** What the voice reads, in exactly the order the text appears on screen. */
   const speechSource = useMemo(() => {
-    const src = speakTarget === "pali" ? (paliList ?? []) : (shownBlocks ?? []).filter((b) => b.text && b.kind !== "note");
-    return src;
-  }, [speakTarget, paliList, shownBlocks]);
+    type Entry = { id: string; isPali: boolean; text: string; shown: string };
+    const out: Entry[] = [];
+    const P = (b: Block) => b.pali && out.push({ id: b.id, isPali: true, text: paliVoice.sinhala ? paliToSinhala(b.pali) : b.pali, shown: renderPali(b.pali, script) });
+    const T = (b: Block) => b.text && b.kind !== "note" && out.push({ id: b.id, isPali: false, text: b.text, shown: b.text });
+    const blocksT = shownBlocks ?? [];
+    if (speakTarget === "pali") (paliList ?? []).forEach(P);
+    else if (speakTarget === "translation") blocksT.forEach(T);
+    else if (aligned) blocksT.forEach((b) => (P(b), T(b)));
+    else ((paliList ?? []).forEach(P), blocksT.forEach(T));
+    return out;
+  }, [speakTarget, paliList, shownBlocks, aligned, paliVoice, script]);
   const items: SpeechItem[] = useMemo(
-    () =>
-      speechSource.map((b) =>
-        speakTarget === "pali"
-          ? { text: paliVoice.sinhala ? paliToSinhala(b.pali ?? "") : b.pali ?? "", lang: paliVoice.lang }
-          : { text: b.text ?? "", lang: transLang },
-      ),
-    [speechSource, speakTarget, paliVoice, transLang],
+    () => speechSource.map((e) => ({ text: e.text, lang: e.isPali ? paliVoice.lang : transLang })),
+    [speechSource, paliVoice, transLang],
   );
   const player = usePlayer(items);
-  const speakingId = player.playing || player.index > 0 ? speechSource[player.index]?.id : undefined;
+  const currentEntry = player.playing || player.index > 0 ? speechSource[player.index] : undefined;
+  const speakingId = currentEntry?.id;
 
   // keep the spoken block in view
   const containerRef = useRef<HTMLDivElement>(null);
@@ -319,6 +322,9 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
         {mode !== "read" && effView === "both" && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted">{t("listenWhat")}:</span>
+            <button className="chip" aria-pressed={listenTo === "both"} onClick={() => setListenTo("both")}>
+              {t("pali")} + {t("meaning")}
+            </button>
             <button className="chip" aria-pressed={listenTo === "translation"} onClick={() => setListenTo("translation")}>
               {t("meaning")}
             </button>
@@ -333,18 +339,18 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
       {!shownBlocks ? (
         <Spinner />
       ) : mode === "listen" ? (
-        <ListenView p={player} text={speechSource[player.index]} pali={speakTarget === "pali"} script={script} size={size} />
+        <ListenView p={player} shown={speechSource[player.index]?.shown ?? ""} pali={!!speechSource[player.index]?.isPali} size={size} />
       ) : (
         <div ref={containerRef} className="reading mx-auto max-w-3xl" style={{ fontSize: size }}>
           {effView === "both" && !aligned ? (
             <div className="grid gap-8 lg:grid-cols-2">
               <div>
                 <h2 className="mb-3 font-sans text-sm font-semibold uppercase tracking-wider text-gold">{t("paliText")}</h2>
-                <Blocks list={paliList ?? []} show="pali" script={script} speakingId={speakTarget === "pali" ? speakingId : undefined} onClick={clickBlock} />
+                <Blocks list={paliList ?? []} show="pali" script={script} speakingId={currentEntry?.isPali ? speakingId : undefined} onClick={clickBlock} />
               </div>
               <div>
                 <h2 className="mb-3 font-sans text-sm font-semibold uppercase tracking-wider text-gold">{current?.lang === "si" ? t("sinhalaMeaning") : t("meaning")}</h2>
-                <Blocks list={shownBlocks} show="text" script={script} speakingId={speakTarget === "translation" ? speakingId : undefined} onClick={clickBlock} />
+                <Blocks list={shownBlocks} show="text" script={script} speakingId={currentEntry && !currentEntry.isPali ? speakingId : undefined} onClick={clickBlock} />
               </div>
             </div>
           ) : (
@@ -386,10 +392,7 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
       )}
 
       <p className="mx-auto mt-10 max-w-3xl text-center text-xs text-muted">
-        {t("source")} ·{" "}
-        <a className="underline" href={`https://suttacentral.net/${uid}`} target="_blank" rel="noopener noreferrer">
-          suttacentral.net/{uid}
-        </a>
+        {t("source")} · {uid}
       </p>
     </div>
   );
@@ -431,9 +434,8 @@ function Blocks({
   );
 }
 
-function ListenView({ p, text, pali, script, size }: { p: ReturnType<typeof usePlayer>; text?: Block; pali: boolean; script: PaliScript; size: number }) {
+function ListenView({ p, shown, pali, size }: { p: ReturnType<typeof usePlayer>; shown: string; pali: boolean; size: number }) {
   const { t } = useApp();
-  const shown = pali ? (text?.pali ? renderPali(text.pali, script) : "") : text?.text ?? "";
   return (
     <div className="scene mx-auto max-w-2xl">
       <div className="card3d relative overflow-hidden p-6 text-center sm:p-10" style={{ boxShadow: "var(--shadow), var(--glow)" }}>

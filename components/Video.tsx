@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useState } from "react";
-import { ExternalLink, Play, Subtitles } from "lucide-react";
+import { Play, Subtitles } from "lucide-react";
 import { videosFor, type Video } from "@/lib/data/videos";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { useApp } from "./providers";
@@ -46,19 +46,14 @@ export function VideoCard({ video }: { video: Video }) {
       </div>
       <div className="p-4">
         <h3 className="line-clamp-2 font-semibold leading-snug">{video.title}</h3>
-        <div className="mt-2 flex items-center justify-between gap-2 text-sm text-muted">
-          <span className="truncate">{video.by}</span>
-          <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-1 text-gold hover:underline">
-            YouTube <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
+        <p className="mt-2 truncate text-sm text-muted">{video.by}</p>
       </div>
     </article>
   );
 }
 
 /** Grid of videos with a language filter. Defaults to the reader's language when such videos exist. */
-export function VideoGrid({ keys, videos: given, search }: { keys?: string[]; videos?: Video[]; search?: string }) {
+export function VideoGrid({ keys, videos: given }: { keys?: string[]; videos?: Video[]; search?: string }) {
   const { lang, t } = useApp();
   const videos = useMemo(() => given ?? videosFor(keys), [given, keys]);
   const langs = useMemo(() => LANGS.filter((l) => videos.some((v) => v.lang === l.code)), [videos]);
@@ -88,16 +83,6 @@ export function VideoGrid({ keys, videos: given, search }: { keys?: string[]; vi
         <Subtitles className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
         <span>{t("captionsNote")}</span>
       </p>
-      {search && (
-        <a
-          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(search)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-ghost mt-4 text-sm"
-        >
-          {t("moreOnYouTube")} <ExternalLink className="h-4 w-4" />
-        </a>
-      )}
     </div>
   );
 }

@@ -151,10 +151,10 @@ const S = {
   voiceOf: { si: "කියවන්නේ", en: "Reading", ta: "வாசிப்பது", es: "Leyendo" },
   nowReading: { si: "දැන් කියවමින්", en: "Now reading", ta: "இப்போது வாசிக்கிறது", es: "Leyendo ahora" },
   noVoice: {
-    si: "මෙම උපාංගයේ {lang} හඬක් ස්ථාපනය කර නැත. Android හි Google Text-to-Speech හෝ Windows/Mac/iPhone සැකසුම්වල භාෂා හඬ එකතු කරන්න. ඒ වන තුරු වෙනත් හඬකින් කියවයි.",
-    en: "No {lang} voice is installed on this device. Add one in your system speech settings (Google Text-to-Speech on Android, or Windows/Mac/iPhone voice settings). Using another voice until then.",
-    ta: "இந்தச் சாதனத்தில் {lang} குரல் நிறுவப்படவில்லை. கணினி பேச்சு அமைப்புகளில் சேர்க்கவும் (Android இல் Google Text-to-Speech). அதுவரை வேறு குரல் பயன்படுத்தப்படும்.",
-    es: "No hay voz en {lang} instalada en este dispositivo. Añádela en los ajustes de voz del sistema (Google Text-to-Speech en Android, o ajustes de Windows/Mac/iPhone). Mientras tanto se usa otra voz.",
+    si: "මෙම උපාංගයේ {lang} හඬක් නැත. 👉 Microsoft Edge බ්‍රව්සරයෙන් විවෘත කරන්න (ස්වාභාවික සිංහල හඬ ඇත), නැතහොත් Android හි Google Text-to-Speech → සිංහල ස්ථාපනය කරන්න. පාඨය ඉහත කියවිය හැක.",
+    en: "This device has no {lang} voice. 👉 Open the app in Microsoft Edge (it has natural Sinhala & Tamil voices), or on Android install Google Text-to-Speech → Sinhala. The text is still shown above.",
+    ta: "இந்தச் சாதனத்தில் {lang} குரல் இல்லை. 👉 Microsoft Edge இல் திறக்கவும் (இயற்கையான தமிழ் குரல் உள்ளது), அல்லது Android இல் Google Text-to-Speech நிறுவவும்.",
+    es: "Este dispositivo no tiene voz en {lang}. 👉 Abre la app en Microsoft Edge (tiene voces naturales), o en Android instala Google Text-to-Speech.",
   },
   noSpeech: {
     si: "මෙම බ්‍රව්සරය කථන (Text-to-Speech) සඳහා සහාය නොදක්වයි.",
@@ -186,7 +186,7 @@ const S = {
   tales: { si: "කතා", en: "tales", ta: "கதைகள்", es: "historias" },
   showMore: { si: "තවත් පෙන්වන්න", en: "Show more", ta: "மேலும் காட்டு", es: "Mostrar más" },
   jatakaNote: {
-    si: "ජාතක 547 ම පාලි ගාථා සහ ඒවායේ සිංහල අර්ථය (A.P. de Zoysa) සමඟ ඇත. සම්පූර්ණ කතා විස්තරය English භාෂාවෙන් කියවිය හැක (භාෂාව → English). සිංහල කතා අසන්න පහත YouTube සබැඳිය බලන්න.",
+    si: "ජාතක 547 ම පාලි ගාථා සහ ඒවායේ සිංහල අර්ථය (A.P. de Zoysa) සමඟ ඇප් එක තුළම ඇත. සම්පූර්ණ කතා විස්තරය English භාෂාවෙන් කියවිය හැක (භාෂාව → English).",
     en: "All 547 Jātakas: the canonical Pāli verses with Sinhala meaning (A.P. de Zoysa), and the full story in English. Tamil and Spanish readers see English.",
     ta: "547 ஜாதகங்களும்: பாளி பாடல்கள், சிங்களப் பொருள், முழுக் கதை ஆங்கிலத்தில்.",
     es: "Los 547 Jātakas: versos pāli con significado en cingalés, y la historia completa en inglés.",

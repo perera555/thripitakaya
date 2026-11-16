@@ -10,7 +10,7 @@ import { VideoGrid } from "@/components/Video";
 import { LANGS, pick } from "@/lib/i18n";
 import { paliToSinhala, renderPali } from "@/lib/pali";
 import { usePref } from "@/lib/usePref";
-import { findVoice } from "@/lib/useSpeech";
+import { paliSpeech, useCloudVoice } from "@/lib/useSpeech";
 import { GATHA_GROUPS, GATHAS, type Gatha } from "@/lib/data/gatha";
 
 function GathaCard({ g }: { g: Gatha }) {
@@ -20,12 +20,13 @@ function GathaCard({ g }: { g: Gatha }) {
   const [what, setWhat] = useState<"pali" | "meaning">(g.pali.length ? "pali" : "meaning");
   const speech = LANGS.find((l) => l.code === lang)!.speech;
 
+  const cloud = useCloudVoice();
   const items = useMemo(() => {
     if (what === "meaning") return [{ text: pick(g.meaning, lang), lang: speech }];
     const voices = typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis.getVoices() : [];
-    const si = !!findVoice(voices, "si-LK");
-    return g.pali.map((v) => ({ text: si ? paliToSinhala(v) : v, lang: si ? "si-LK" : findVoice(voices, "it-IT") ? "it-IT" : "en-US" }));
-  }, [what, g, lang, speech]);
+    const pv = paliSpeech(voices, cloud);
+    return g.pali.map((v) => ({ text: pv.sinhala ? paliToSinhala(v) : v, lang: pv.lang }));
+  }, [what, g, lang, speech, cloud]);
   const p = usePlayer(items);
 
   return (

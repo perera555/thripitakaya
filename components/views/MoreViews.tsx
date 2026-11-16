@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Apple, BookOpenText, Download, ExternalLink, Monitor, Smartphone, Trash2, WifiOff, X } from "lucide-react";
+import { Apple, BookOpenText, Download, Monitor, Smartphone, Trash2, WifiOff, X } from "lucide-react";
 import { useApp } from "@/components/providers";
 import { PageHeader, Section, TiltCard } from "@/components/ui";
 import { PlayerBar, SpeakButton, usePlayer } from "@/components/Player";
@@ -11,7 +11,7 @@ import { useInstall } from "@/components/Install";
 import { LANGS, pick, type Lang } from "@/lib/i18n";
 import { paliToSinhala, renderPali } from "@/lib/pali";
 import { usePref } from "@/lib/usePref";
-import { findVoice } from "@/lib/useSpeech";
+import { paliSpeech, useCloudVoice } from "@/lib/useSpeech";
 import { PACCAYAS, PATTHANA_UID } from "@/lib/data/patthana";
 import { VIDEOS, VIDEO_TOPICS, type Video } from "@/lib/data/videos";
 import { listSaved, removeSaved, type SavedText } from "@/lib/saved";
@@ -21,11 +21,12 @@ import booksData from "@/lib/data/rerukane-books.json";
 export function PatthanaView() {
   const { t, lang } = useApp();
   const [script, setScript] = usePref<"sinhala" | "roman">("script", lang === "si" ? "sinhala" : "roman");
+  const cloud = useCloudVoice();
   const items = useMemo(() => {
     const voices = typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis.getVoices() : [];
-    const si = !!findVoice(voices, "si-LK");
-    return PACCAYAS.map((p) => ({ text: si ? paliToSinhala(p.pali) : p.pali, lang: si ? "si-LK" : findVoice(voices, "it-IT") ? "it-IT" : "en-US" }));
-  }, []);
+    const pv = paliSpeech(voices, cloud);
+    return PACCAYAS.map((p) => ({ text: pv.sinhala ? paliToSinhala(p.pali) : p.pali, lang: pv.lang }));
+  }, [cloud]);
   const player = usePlayer(items);
 
   return (
@@ -132,12 +133,7 @@ export function BooksView() {
         })}
       </div>
 
-      <p className="mt-6 text-sm text-muted">
-        {t("booksVoiceNote")} ·{" "}
-        <a className="underline" href="https://rerukanemahanahimi.lk/library.html" target="_blank" rel="noopener noreferrer">
-          rerukanemahanahimi.lk
-        </a>
-      </p>
+      <p className="mt-6 text-sm text-muted">{t("booksVoiceNote")} · Sri Chandawimala Dhamma Treatises Preservation Board</p>
 
       <Section title={t("deshanaVideos")}>
         <VideoGrid keys={["rerukane"]} search="Rerukane Chandawimala Thero" />
@@ -147,8 +143,8 @@ export function BooksView() {
         <div className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur" role="dialog" aria-modal="true">
           <div className="flex items-center gap-3 p-3 text-white">
             <p className="min-w-0 flex-1 truncate font-semibold">{lang === "si" ? open.si : open.title}</p>
-            <a className="btn btn-ghost px-3 py-1.5 text-sm" href={`https://drive.google.com/file/d/${open.pdf}/view`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" /> {t("openPdf")}
+            <a className="btn btn-ghost px-3 py-1.5 text-sm" href={`https://drive.google.com/uc?export=download&id=${open.pdf}`} download>
+              <Download className="h-4 w-4" /> {t("download")}
             </a>
             <button className="btn btn-ghost h-10 w-10 p-0" onClick={() => setOpen(null)} aria-label="Close">
               <X className="h-5 w-5" />

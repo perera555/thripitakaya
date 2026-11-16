@@ -3,24 +3,65 @@
  * Responses are memoised in memory and cached for offline use by the service worker.
  */
 
-const API = "https://suttacentral.net/api";
+/**
+ * Where texts come from, in order:
+ *  1. bundled inside the app (public/sc — all Jātaka, Pirith, Sutras, Gāthā, Paṭṭhāna)
+ *  2. the app's own server (/api/sc — rest of the Tipiṭaka, CDN-cached)
+ *  3. SuttaCentral directly (last resort)
+ */
+const SOURCES = ["/api/sc", "https://suttacentral.net/api"];
+
+/** Must match scripts/bundle-texts.mjs. */
+const mirrorName = (p: string) => p.replace(/^\//, "").replace(/[^a-zA-Z0-9.-]+/g, "_") + ".json";
+let bundled: Promise<Set<string>> | null = null;
+function bundledIndex(): Promise<Set<string>> {
+  if (!bundled)
+    bundled = fetch("/sc/index.json")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: string[]) => new Set(list))
+      .catch(() => new Set<string>());
+  return bundled;
+}
 
 const memo = new Map<string, Promise<unknown>>();
 
+async function fetchJSON<T>(url: string): Promise<T> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return (await r.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function getJSON<T>(path: string): Promise<T> {
-  const url = `${API}${path}`;
-  const hit = memo.get(url);
+  const hit = memo.get(path);
   if (hit) return hit as Promise<T>;
-  const p = fetch(url)
-    .then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json() as Promise<T>;
-    })
-    .catch((e) => {
-      memo.delete(url);
-      throw e;
-    });
-  memo.set(url, p);
+  const p = (async () => {
+    let last: unknown;
+    if ((await bundledIndex()).has(path)) {
+      try {
+        return await fetchJSON<T>(`/sc/${mirrorName(path)}`);
+      } catch (e) {
+        last = e;
+      }
+    }
+    for (const base of SOURCES) {
+      try {
+        return await fetchJSON<T>(`${base}${path}`);
+      } catch (e) {
+        last = e;
+      }
+    }
+    throw last;
+  })().catch((e) => {
+    memo.delete(path);
+    throw e;
+  });
+  memo.set(path, p);
   return p;
 }
 

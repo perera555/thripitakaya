@@ -35,9 +35,6 @@ export function JatakaView() {
     <div>
       <PageHeader icon="🦚" title={t("jataka")} subtitle={t("jatakaDesc")}>
         <p className="mb-2 text-sm text-muted">{t("jatakaNote")}</p>
-        <a className="btn btn-ghost mb-4 px-3 py-1.5 text-sm" href="https://www.youtube.com/results?search_query=%E0%B6%A2%E0%B7%8F%E0%B6%AD%E0%B6%9A+%E0%B6%9A%E0%B6%AD%E0%B7%8F" target="_blank" rel="noopener noreferrer">
-          ▶ {t("jatakaVideos")}
-        </a>
         <label className="glass flex items-center gap-3 rounded-2xl px-4 py-3">
           <Search className="h-5 w-5 text-gold" />
           <input

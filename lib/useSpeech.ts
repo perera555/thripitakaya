@@ -54,18 +54,51 @@ function claim(me: symbol | null) {
   owners.forEach((f) => f(me));
 }
 
+/** Is the server voice (/api/tts) available? Checked once per page load. */
+let cloudProbe: Promise<boolean> | null = null;
+export function hasCloudVoice(): Promise<boolean> {
+  if (!cloudProbe)
+    cloudProbe = fetch("/api/tts?probe=1")
+      .then((r) => r.ok)
+      .catch(() => false);
+  return cloudProbe;
+}
+
+export function useCloudVoice(): boolean {
+  const [c, setC] = useState(false);
+  useEffect(() => {
+    hasCloudVoice().then(setC);
+  }, []);
+  return c;
+}
+
+/** How to speak Pāli: Sinhala script with a Sinhala voice when possible, else Roman with Italian/English. */
+export function paliSpeech(voices: SpeechSynthesisVoice[], cloud: boolean): { lang: string; sinhala: boolean } {
+  if (findVoice(voices, "si-LK") || cloud) return { lang: "si-LK", sinhala: true };
+  if (findVoice(voices, "it-IT")) return { lang: "it-IT", sinhala: false };
+  return { lang: "en-US", sinhala: false };
+}
+
 export function useSpeech() {
   const [supported, setSupported] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
+  const [cloud, setCloud] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const session = useRef(0);
   const keep = useRef<SpeechSynthesisUtterance[]>([]);
+  const audio = useRef<HTMLAudioElement | null>(null);
   const me = useRef(Symbol("player"));
+
+  useEffect(() => {
+    hasCloudVoice().then(setCloud);
+  }, []);
 
   useEffect(() => {
     const onClaim = (o: symbol | null) => {
       if (o !== me.current) {
         session.current++;
+        audio.current?.pause();
         setSpeaking(false);
       }
     };
@@ -77,8 +110,9 @@ export function useSpeech() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    setSupported(true);
+    if (typeof window === "undefined") return;
+    setSupported("speechSynthesis" in window || "Audio" in window);
+    if (!("speechSynthesis" in window)) return;
     const load = () => setVoices(window.speechSynthesis.getVoices());
     load();
     window.speechSynthesis.addEventListener("voiceschanged", load);
@@ -86,6 +120,7 @@ export function useSpeech() {
       window.speechSynthesis.removeEventListener("voiceschanged", load);
       session.current++;
       window.speechSynthesis.cancel();
+      audio.current?.pause();
     };
   }, []);
 
@@ -93,20 +128,28 @@ export function useSpeech() {
     session.current++;
     keep.current = [];
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    audio.current?.pause();
     setSpeaking(false);
   }, []);
 
   const speak = useCallback(
     (items: SpeechItem[], start: number, opts: Options = {}) => {
-      if (!("speechSynthesis" in window)) return;
-      const synth = window.speechSynthesis;
-      synth.cancel();
+      const synth = "speechSynthesis" in window ? window.speechSynthesis : null;
+      synth?.cancel();
+      audio.current?.pause();
       claim(me.current);
       const my = ++session.current;
-      const all = synth.getVoices();
+      const all = synth?.getVoices() ?? [];
       setSpeaking(true);
+      setFailed(null);
 
-      const run = (i: number) => {
+      const fail = (lang: string) => {
+        if (my !== session.current) return;
+        setSpeaking(false);
+        setFailed(lang);
+      };
+
+      const run = async (i: number) => {
         if (my !== session.current) return;
         if (i >= items.length) {
           setSpeaking(false);
@@ -116,29 +159,53 @@ export function useSpeech() {
         opts.onIndex?.(i);
         const parts = chunk(items[i].text);
         if (!parts.length) return run(i + 1);
-        const voice = findVoice(all, items[i].lang);
+        const lang = items[i].lang;
+        const voice = findVoice(all, lang);
         let k = 0;
-        const sayNext = () => {
-          if (my !== session.current) return;
-          if (k >= parts.length) return run(i + 1);
-          const u = new SpeechSynthesisUtterance(parts[k++]);
-          u.lang = voice?.lang ?? items[i].lang;
-          if (voice) u.voice = voice;
-          u.rate = opts.rate ?? 1;
-          u.onend = sayNext;
-          u.onerror = (e) => {
-            if (e.error === "interrupted" || e.error === "canceled") return;
-            sayNext();
+
+        // 1) A real voice for this language on the device → browser speech.
+        if (voice && synth) {
+          const sayNext = () => {
+            if (my !== session.current) return;
+            if (k >= parts.length) return void run(i + 1);
+            const u = new SpeechSynthesisUtterance(parts[k++]);
+            u.lang = voice.lang;
+            u.voice = voice;
+            u.rate = opts.rate ?? 1;
+            u.onend = sayNext;
+            u.onerror = (e) => {
+              if (e.error === "interrupted" || e.error === "canceled") return;
+              if (e.error === "language-unavailable" || e.error === "voice-unavailable" || e.error === "synthesis-unavailable") return fail(lang);
+              sayNext();
+            };
+            keep.current = [u];
+            synth.speak(u);
           };
-          keep.current = [u];
-          synth.speak(u);
-        };
-        sayNext();
+          return sayNext();
+        }
+
+        // 2) No device voice → natural voice from the server (/api/tts).
+        if (await hasCloudVoice()) {
+          const el = audio.current ?? (audio.current = new Audio());
+          const playNext = () => {
+            if (my !== session.current) return;
+            if (k >= parts.length) return void run(i + 1);
+            const q = new URLSearchParams({ lang, text: parts[k++], rate: String(opts.rate ?? 1) });
+            el.src = `/api/tts?${q}`;
+            el.onended = playNext;
+            el.onerror = () => fail(lang);
+            el.play().catch(() => fail(lang));
+          };
+          return playNext();
+        }
+
+        // 3) Nothing can speak this language here.
+        fail(lang);
       };
-      run(start);
+      void run(start);
     },
     [],
   );
 
-  return { supported, voices, speaking, speak, stop };
+  return { supported, voices, speaking, speak, stop, cloud, failed };
 }

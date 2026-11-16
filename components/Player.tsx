@@ -67,10 +67,12 @@ export function usePlayer(items: SpeechItem[]) {
   useLayoutEffect(() => () => window.speechSynthesis?.cancel(), []);
 
   const missing = useMemo(() => {
-    if (!sp.voices.length) return [];
+    if (sp.cloud) return sp.failed ? [sp.failed] : [];
     const langs = [...new Set(items.map((i) => i.lang))];
-    return langs.filter((l) => !findVoice(sp.voices, l));
-  }, [items, sp.voices]);
+    const lacking = langs.filter((l) => !findVoice(sp.voices, l));
+    if (sp.failed && !lacking.includes(sp.failed)) lacking.push(sp.failed);
+    return lacking;
+  }, [items, sp.voices, sp.cloud, sp.failed]);
 
   return { ...sp, index, setIndex, playing, rate, start, pause, toggle, next, prev, stop, changeRate, missing, count: items.length };
 }
