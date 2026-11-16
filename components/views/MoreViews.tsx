@@ -310,11 +310,11 @@ export function InstallView() {
       <PageHeader icon="📲" title={t("install")} subtitle={t("installDesc")}>
         {standalone ? (
           <p className="text-gold-2">{t("installed")}</p>
-        ) : canPrompt ? (
-          <button className="btn btn-gold px-6 py-3" onClick={prompt}>
+        ) : (
+          <button className="btn btn-gold px-6 py-3" onClick={prompt} data-native={canPrompt}>
             <Download className="h-5 w-5" /> {t("installNow")}
           </button>
-        ) : null}
+        )}
       </PageHeader>
       <div className="grid gap-5 sm:grid-cols-2">
         {steps.map((s) => (

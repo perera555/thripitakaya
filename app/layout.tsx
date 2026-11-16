@@ -6,6 +6,7 @@ import { Providers } from "@/components/providers";
 import { BottomNav, Header } from "@/components/Header";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { Footer } from "@/components/Footer";
+import { AppleInstallGuide } from "@/components/Install";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] });
 const si = Noto_Sans_Sinhala({ variable: "--font-si", subsets: ["sinhala"] });
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
   applicationName: "Tripitaka",
   appleWebApp: { capable: true, title: "ත්‍රිපිටකය", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {
@@ -60,6 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <BottomNav />
           </Suspense>
           <ServiceWorker />
+          <AppleInstallGuide />
         </Providers>
       </body>
     </html>
