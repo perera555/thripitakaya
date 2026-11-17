@@ -139,6 +139,11 @@ export function BooksView() {
         <VideoGrid keys={["rerukane"]} search="Rerukane Chandawimala Thero" />
       </Section>
 
+      <Section title={t("galigamuweTitle")}>
+        <p className="card3d mb-5 p-4 text-sm text-muted">{t("galigamuweNote")}</p>
+        <VideoGrid keys={["galigamuwe"]} />
+      </Section>
+
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur" role="dialog" aria-modal="true">
           <div className="flex items-center gap-3 p-3 text-white">

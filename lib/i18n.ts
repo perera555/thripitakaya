@@ -246,6 +246,13 @@ const S = {
   },
   meaning: { si: "අර්ථය", en: "Meaning", ta: "பொருள்", es: "Significado" },
   playAll: { si: "සියල්ල අසන්න", en: "Play all", ta: "அனைத்தையும் கேள்", es: "Reproducir todo" },
+  galigamuweTitle: { si: "ගලිගමුවේ ඥානදීප හිමි", en: "Ven. Galigamuwe Gnanadeepa Thero", ta: "வண. கலிகமுவே ஞானதீப தேரர்", es: "Ven. Galigamuwe Gnanadeepa Thera" },
+  galigamuweNote: {
+    si: "හිමියන්ගේ පොත් ප්‍රකාශකයා (සදීප) විසින් අලෙවි කරන බැවින් ඒවා නොමිලේ ඇප් එකට එක් කළ නොහැක — පොත් පොත්හලෙන් මිලදී ගන්න. හිමියන්ගේ ධර්ම දේශනා පහතින් නරඹන්න, අසන්න.",
+    en: "The Thero's books are sold by the publisher (Sadeepa), so they can't be added free to the app — please buy them from a bookshop. Watch and listen to his Dhamma talks below.",
+    ta: "தேரரின் நூல்கள் வெளியீட்டாளரால் விற்கப்படுவதால் இலவசமாகச் சேர்க்க முடியாது. அவரது தர்ம உரைகளைக் கீழே கேளுங்கள்.",
+    es: "Los libros del Thera los vende la editorial, por lo que no pueden añadirse gratis. Escucha sus charlas abajo.",
+  },
   dedicationTitle: { si: "ධර්ම දානයකි 🙏", en: "A gift of Dhamma 🙏", ta: "ஒரு தர்ம தானம் 🙏", es: "Un regalo del Dhamma 🙏" },
   dedication: {
     si: "මෙම ඇප් එක ධර්ම දානයක් ලෙස සැමට නොමිලේ බෙදා හරිමි. මෙයින් ලැබෙන පින් මාගේ දෙමාපියන්ට, සහෝදර සහෝදරියන්ට නිදුක් නිරෝගී සුවය හා චිර ජීවනය පිණිස වේවා! අප අතරින් වෙන්ව ගිය සියලු දෙනාට නිර්වාණ සුවය පිණිස හේතු වේවා! සියලු දෙනාටම මේ පින් ලැබේවා!",
