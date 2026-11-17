@@ -35,21 +35,30 @@ export function HomeView() {
 
   return (
     <div>
-      {/* Dedication */}
-      <aside className="card3d relative mb-6 overflow-hidden p-4 sm:p-5 animate-rise" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--gold) 16%, var(--card-2)), var(--card))" }}>
-        <div className="flex items-start gap-3">
-          <span className="text-3xl" aria-hidden>🪷</span>
-          <div>
-            <p className="font-bold text-gold-2">{t("dedicationTitle")}</p>
-            <p className="mt-1 text-[15px] leading-relaxed text-ink/90">{t("dedication")}</p>
-            <p className="mt-2 text-sm font-semibold text-gold">සාධු! සාධු! සාධු!</p>
-          </div>
+      {/* Top: Samadhi Buddha photo with the dedication */}
+      <section className="card3d relative mb-6 overflow-hidden animate-rise" aria-label={t("dedicationTitle")}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/bg/samadhi.webp"
+          srcSet="/bg/samadhi-sm.webp 700w, /bg/samadhi.webp 1400w"
+          sizes="(max-width: 768px) 100vw, 1280px"
+          alt="සමාධි බුද්ධ ප්‍රතිමාව, අනුරාධපුරය · Samadhi Buddha statue, Anuradhapura"
+          className="h-[240px] w-full object-cover object-[50%_45%] sm:h-[400px]"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 hidden sm:block" style={{ background: "linear-gradient(180deg, rgba(11,9,21,0) 35%, rgba(11,9,21,0.92) 100%)" }} />
+        <div className="relative p-4 sm:absolute sm:inset-x-0 sm:bottom-0 sm:p-6">
+          <p className="flex items-center gap-2 text-lg font-bold text-gold-2 drop-shadow">
+            <span aria-hidden>🪷</span> {t("dedicationTitle")}
+          </p>
+          <p className="mt-1 text-[14px] leading-relaxed text-white/95 drop-shadow sm:text-base">{t("dedication")}</p>
+          <p className="mt-1.5 text-sm font-semibold text-gold-2">සාධු! සාධු! සාධු!</p>
         </div>
-      </aside>
+      </section>
 
       {/* Hero */}
       <section className="relative grid items-center gap-6 py-6 md:grid-cols-[1.1fr_1fr] md:gap-8 md:py-12">
-        <div className="hero-photo" aria-hidden />
+        
         <div className="order-2 text-center md:order-1 md:text-left animate-rise">
           <p className="mb-3 text-sm font-semibold tracking-[0.25em] text-gold"> නමෝ තස්ස භගවතෝ අරහතෝ සම්මා සම්බුද්ධස්ස</p>
           <h1 className="text-5xl font-extrabold leading-tight sm:text-6xl">

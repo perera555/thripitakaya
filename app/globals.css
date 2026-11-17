@@ -86,11 +86,11 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/bg/samadhi-sm.webp") center 30% / cover no-repeat;
-  opacity: 0.13;
-  filter: saturate(0.6) sepia(0.35);
-  -webkit-mask-image: radial-gradient(120% 75% at 50% 35%, #000 25%, transparent 80%);
-  mask-image: radial-gradient(120% 75% at 50% 35%, #000 25%, transparent 80%);
+  background: url("/bg/samadhi-sm.webp") center 40% / cover no-repeat;
+  opacity: 0.32;
+  filter: saturate(0.85) sepia(0.15);
+  -webkit-mask-image: radial-gradient(140% 110% at 50% 45%, #000 55%, rgba(0, 0, 0, 0.55) 100%);
+  mask-image: radial-gradient(140% 110% at 50% 45%, #000 55%, rgba(0, 0, 0, 0.55) 100%);
 }
 @media (min-width: 768px) {
   .ambient::after {
@@ -99,7 +99,7 @@ body {
   }
 }
 :root[data-theme="light"] .ambient::after {
-  opacity: 0.09;
+  opacity: 0.2;
 }
 
 .hero-photo {
