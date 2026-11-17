@@ -16,7 +16,8 @@ export function chunk(text: string, max = 180): string[] {
   const clean = text.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, " ").replace(/\s+/g, " ").trim();
   if (!clean || !/\p{L}/u.test(clean)) return [];
   if (clean.length <= max) return [clean];
-  const sentences = clean.split(/(?<=[.!?;:।॥෴”"’)])\s+/);
+  // split after sentence punctuation (no regex lookbehind — unsupported on older iPhones)
+  const sentences = clean.replace(/([.!?;:।॥෴”"’)])\s+/g, "$1\u0000").split("\u0000");
   const out: string[] = [];
   let buf = "";
   const push = (s: string) => {

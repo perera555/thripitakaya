@@ -11,7 +11,10 @@ import { LANGS, pick } from "@/lib/i18n";
 import { paliToSinhala, renderPali } from "@/lib/pali";
 import { usePref } from "@/lib/usePref";
 import { paliSpeech, useCloudVoice } from "@/lib/useSpeech";
-import { GATHA_GROUPS, GATHAS, type Gatha } from "@/lib/data/gatha";
+import { GATHA_GROUPS, GATHAS as BASE, type Gatha } from "@/lib/data/gatha";
+import { DEITY_GATHAS } from "@/lib/data/deities";
+
+const GATHAS: Gatha[] = [...BASE, ...DEITY_GATHAS];
 
 function GathaCard({ g }: { g: Gatha }) {
   const { lang, t } = useApp();

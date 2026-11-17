@@ -21,6 +21,7 @@ const TILES: { href: string; title: StringKey; desc: StringKey; icon: string; hu
   { href: "/patthana", title: "patthana", desc: "patthanaDesc", icon: "🔆", hue: 280 },
   { href: "/books", title: "books", desc: "booksDesc", icon: "📖", hue: 15 },
   { href: "/deshana", title: "deshana", desc: "deshanaDesc", icon: "🎧", hue: 260 },
+  { href: "/reviews", title: "reviews", desc: "reviewsDesc", icon: "⭐", hue: 50 },
   { href: "/install", title: "install", desc: "installDesc", icon: "📲", hue: 180 },
 ];
 

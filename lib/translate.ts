@@ -8,7 +8,8 @@ function pieces(text: string, max = 1400): string[] {
   if (text.length <= max) return [text];
   const out: string[] = [];
   let buf = "";
-  for (const s of text.split(/(?<=[.!?;:”"])\s+/)) {
+  // split after sentence punctuation (no regex lookbehind — unsupported on older iPhones)
+  for (const s of text.replace(/([.!?;:”"])\s+/g, "$1\u0000").split("\u0000")) {
     if ((buf + " " + s).length > max && buf) {
       out.push(buf);
       buf = s;

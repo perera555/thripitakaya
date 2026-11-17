@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import {
-  BookOpen, Bookmark, Download, Flower2, Home, Library, Menu, Moon, Music2, ScrollText, Sparkles, Sun, Video, X, Landmark, Network,
+  BookOpen, Bookmark, Download, Star, Flower2, Home, Library, Menu, Moon, Music2, ScrollText, Sparkles, Sun, Video, X, Landmark, Network,
 } from "lucide-react";
 import { LANGS, type StringKey } from "@/lib/i18n";
 import { useApp } from "./providers";
@@ -24,6 +24,7 @@ export const NAV: NavItem[] = [
   { href: "/patthana", key: "patthana", icon: Network },
   { href: "/books", key: "books", icon: Sparkles },
   { href: "/deshana", key: "deshana", icon: Video },
+  { href: "/reviews", key: "reviews", icon: Star },
   { href: "/saved", key: "saved", icon: Bookmark },
   { href: "/install", key: "install", icon: Download },
 ];
