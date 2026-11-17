@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookmarkCheck, BookmarkPlus, ChevronLeft, ChevronRight, Download, Headphones, BookOpenText, Minus, Plus, WifiOff } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, ChevronDown, ChevronLeft, ChevronRight, Download, Headphones, BookOpenText, Layers, Minus, Plus, Settings2, WifiOff } from "lucide-react";
+import { translateBlocks } from "@/lib/translate";
 import { getLegacy, getNeighbours, getRoot, getSegmented, getSuttaplex, type Block, type Neighbours, type ScTranslation, type Suttaplex } from "@/lib/sc";
 import { LANGS, langLabel, type Lang } from "@/lib/i18n";
 import { paliToSinhala, renderPali, type PaliScript } from "@/lib/pali";
@@ -11,7 +12,7 @@ import { downloadText, findSavedByUid, saveText, savedKey, type SavedText } from
 import { paliSpeech, useCloudVoice, type SpeechItem } from "@/lib/useSpeech";
 import { videoKeysForUid } from "@/lib/data/texts";
 import { useApp } from "./providers";
-import { PlayerBar, usePlayer } from "./Player";
+import { DownloadAudio, PlayerBar, usePlayer } from "./Player";
 import { VideoGrid } from "./Video";
 import { Section, Spinner } from "./ui";
 
@@ -20,12 +21,35 @@ type Mode = "read" | "listen" | "readlisten";
 
 const OUR = LANGS.map((l) => l.code) as string[];
 
-function chooseTranslation(list: ScTranslation[], want: Lang): { lang: string; options: ScTranslation[]; fellBack: boolean } | null {
+type Opt = ScTranslation & { auto?: boolean; srcAuthor?: string; srcSegmented?: boolean };
+
+const AUTO_LABEL: Record<Lang, string> = {
+  si: "සම්පූර්ණ කතාව — සිංහල (යන්ත්‍ර පරිවර්තනය)",
+  ta: "முழு உரை — தமிழ் (இயந்திர மொழிபெயர்ப்பு)",
+  es: "Texto completo — español (traducción automática)",
+  en: "",
+};
+
+/**
+ * Picks the translation to show. Besides human translations it offers a machine translation of the
+ * full English text — the default for Jātaka (whose Sinhala edition has only the verses) and for
+ * languages with no human translation.
+ */
+function chooseTranslation(list: ScTranslation[], want: Lang, uid: string): { lang: string; options: Opt[]; fellBack: boolean } | null {
   const tr = list.filter((t) => !t.is_root && OUR.includes(t.lang));
   if (!tr.length) return null;
-  const pickLang = tr.some((t) => t.lang === want) ? want : tr.some((t) => t.lang === "en") ? "en" : tr[0].lang;
-  const options = tr.filter((t) => t.lang === pickLang).sort((a, b) => Number(b.segmented) - Number(a.segmented));
-  return { lang: pickLang, options, fellBack: pickLang !== want };
+  const isJa = /^ja[0-9]/.test(uid);
+  const native = tr.filter((t) => t.lang === want).sort((a, b) => Number(b.segmented) - Number(a.segmented));
+  const en = tr.filter((t) => t.lang === "en");
+  let auto: Opt | null = null;
+  if (want !== "en" && en.length) {
+    const src = (isJa ? en.find((e) => !e.segmented) : en.find((e) => e.segmented)) ?? en[0];
+    auto = { ...src, lang: want, author_uid: `auto:${src.author_uid}`, author: `${AUTO_LABEL[want]} · ${src.author}`, auto: true, srcAuthor: src.author_uid, srcSegmented: src.segmented };
+  }
+  if (native.length) return { lang: want, options: auto ? (isJa ? [auto, ...native] : [...native, auto]) : native, fellBack: false };
+  if (auto) return { lang: want, options: [auto, ...en], fellBack: false };
+  const pickLang = en.length ? "en" : tr[0].lang;
+  return { lang: pickLang, options: tr.filter((t) => t.lang === pickLang), fellBack: pickLang !== want };
 }
 
 export function Reader({ uid, defaultView, extraVideos }: { uid: string; defaultView?: View; extraVideos?: string[] }) {
@@ -67,8 +91,10 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
     };
   }, [uid, attempt]);
 
-  const choice = useMemo(() => (plex ? chooseTranslation(plex.translations, want) : null), [plex, want]);
-  const current = choice?.options.find((o) => o.author_uid === author) ?? choice?.options[0];
+  const choice = useMemo(() => (plex ? chooseTranslation(plex.translations, want, uid) : null), [plex, want, uid]);
+  const current: Opt | undefined = choice?.options.find((o) => o.author_uid === author) ?? choice?.options[0];
+  const [translating, setTranslating] = useState<{ done: number; total: number } | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // 2. load texts
   useEffect(() => {
@@ -79,6 +105,22 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
     const hasRoot = plex.translations.some((x) => x.is_root && x.lang === "pli");
     (async () => {
       try {
+        if (current?.auto && current.srcAuthor) {
+          const src = current.srcSegmented
+            ? await getSegmented(uid, current.srcAuthor, "en")
+            : (await getLegacy(uid, current.srcAuthor, "en")).blocks;
+          const r = !current.srcSegmented && hasRoot ? await getRoot(uid).catch(() => null) : null;
+          if (!live) return;
+          setRoot(r);
+          setTranslating({ done: 0, total: 1 });
+          const tb = await translateBlocks(src, current.lang, (done, total) => live && setTranslating({ done, total }));
+          if (!live) return;
+          setTranslating(null);
+          setBlocks(tb);
+          const n = await getNeighbours(uid, current.srcAuthor, "en");
+          if (live) setNav(n);
+          return;
+        }
         if (current?.segmented) {
           const b = await getSegmented(uid, current.author_uid, current.lang);
           if (live) setBlocks(b);
@@ -232,131 +274,149 @@ export function Reader({ uid, defaultView, extraVideos }: { uid: string; default
         )}
       </header>
 
-      {/* Controls */}
-      <div className="glass sticky top-[4.5rem] z-30 mb-6 space-y-3 rounded-2xl p-3 sm:top-[4.25rem]">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-full border border-line p-0.5" role="tablist">
-            {([
-              ["read", t("read"), BookOpenText],
-              ["listen", t("listen"), Headphones],
-              ["readlisten", t("readListen"), null],
-            ] as const).map(([m, label, Icon]) => (
-              <button
-                key={m}
-                role="tab"
-                aria-selected={mode === m}
-                onClick={() => {
-                  setMode(m);
-                  if (m === "read") player.pause();
-                  else if (!player.playing) player.start(player.index);
-                }} className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold ${mode === m ? "bg-gradient-to-br from-gold-2 to-gold text-[#1d1205]" : "text-muted"}`}>
-                {Icon && <Icon className="h-4 w-4" />}
-                {label}
-              </button>
-            ))}
+      {/* Controls — compact on phones; detailed settings fold away */}
+      <div className="glass mb-5 space-y-3 rounded-2xl p-2.5 sm:p-3">
+        <div className="grid grid-cols-3 gap-1 rounded-2xl border border-line p-1" role="tablist">
+          {([
+            ["read", t("read"), BookOpenText],
+            ["listen", t("listen"), Headphones],
+            ["readlisten", t("bothShort"), Layers],
+          ] as const).map(([m, label, Icon]) => (
+            <button
+              key={m}
+              role="tab"
+              aria-selected={mode === m}
+              onClick={() => {
+                setMode(m);
+                if (m === "read") player.pause();
+                else if (!player.playing) player.start(player.index);
+              }}
+              className={`flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold ${mode === m ? "bg-gradient-to-br from-gold-2 to-gold text-[#1d1205]" : "text-muted"}`}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        <button className="flex w-full items-center justify-between rounded-xl px-2 py-1 text-sm text-muted sm:hidden" onClick={() => setShowSettings(!showSettings)} aria-expanded={showSettings}>
+          <span className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-gold" /> {t("settings")}
+            <span className="truncate text-xs">· {current ? `${langLabel(current.lang)}` : ""} · {script === "sinhala" ? "සිංහල" : "Roman"}</span>
+          </span>
+          <ChevronDown className={`h-4 w-4 transition ${showSettings ? "rotate-180" : ""}`} />
+        </button>
+
+        <div className={`${showSettings ? "block" : "hidden"} space-y-3 sm:block`}>
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPali && hasTrans &&
+              (["both", "translation", "pali"] as View[]).map((v) => (
+                <button key={v} className="chip" aria-pressed={effView === v} onClick={() => setView(v)}>
+                  {v === "both" ? `${t("pali")} + ${t("meaning")}` : t(v)}
+                </button>
+              ))}
+            {hasPali && (
+              <>
+                <button className="chip" aria-pressed={script === "sinhala"} onClick={() => setScript("sinhala")}>
+                  {t("pali")} · සිංහල
+                </button>
+                <button className="chip" aria-pressed={script === "roman"} onClick={() => setScript("roman")}>
+                  {t("pali")} · Roman
+                </button>
+              </>
+            )}
           </div>
-          <div className="ml-auto flex items-center gap-1">
+          {plex && choice && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <label className="flex items-center gap-1.5">
+                <span className="text-muted">{t("language")}</span>
+                <select className="rounded-full border border-line bg-card-2 px-2 py-1" value={want} onChange={(e) => setTextLang(e.target.value)}>
+                  {LANGS.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {choice.options.length > 1 && (
+                <label className="flex min-w-0 items-center gap-1.5">
+                  <span className="text-muted">{t("translator")}</span>
+                  <select className="min-w-0 max-w-[14rem] rounded-full border border-line bg-card-2 px-2 py-1" value={current?.author_uid} onChange={(e) => setAuthor(e.target.value)}>
+                    {choice.options.map((o) => (
+                      <option key={o.author_uid} value={o.author_uid}>
+                        {o.author}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
+          {mode !== "read" && effView === "both" && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted">{t("listenWhat")}:</span>
+              <button className="chip" aria-pressed={listenTo === "both"} onClick={() => setListenTo("both")}>
+                {t("pali")} + {t("meaning")}
+              </button>
+              <button className="chip" aria-pressed={listenTo === "translation"} onClick={() => setListenTo("translation")}>
+                {t("meaning")}
+              </button>
+              <button className="chip" aria-pressed={listenTo === "pali"} onClick={() => setListenTo("pali")}>
+                {t("pali")}
+              </button>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
             <button className="btn btn-ghost h-9 w-9 p-0" onClick={() => setSize(Math.max(14, size - 1))} aria-label={t("textSize")}>
               <Minus className="h-4 w-4" />
             </button>
             <button className="btn btn-ghost h-9 w-9 p-0" onClick={() => setSize(Math.min(30, size + 1))} aria-label={t("textSize")}>
               <Plus className="h-4 w-4" />
             </button>
+            <button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={onSave} disabled={!shownBlocks}>
+              {savedOk ? <BookmarkCheck className="h-4 w-4 text-gold" /> : <BookmarkPlus className="h-4 w-4" />}
+              {savedOk ? t("savedOk") : t("saveOffline")}
+            </button>
+            <button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={onDownload} disabled={!shownBlocks}>
+              <Download className="h-4 w-4" /> {t("download")}
+            </button>
+            <DownloadAudio p={player} name={titleShown} />
           </div>
         </div>
-        <div className="no-scrollbar -mx-3 flex items-center gap-2 overflow-x-auto px-3">
-          {hasPali && hasTrans &&
-            (["both", "translation", "pali"] as View[]).map((v) => (
-              <button key={v} className="chip" aria-pressed={effView === v} onClick={() => setView(v)}>
-                {v === "both" ? `${t("pali")} + ${t("meaning")}` : t(v)}
-              </button>
-            ))}
-          {hasPali && (
-            <>
-              <span className="mx-1 h-5 w-px bg-line" />
-              <button className="chip" aria-pressed={script === "sinhala"} onClick={() => setScript("sinhala")}>
-                {t("pali")} · සිංහල
-              </button>
-              <button className="chip" aria-pressed={script === "roman"} onClick={() => setScript("roman")}>
-                {t("pali")} · Roman
-              </button>
-            </>
-          )}
-        </div>
-        {plex && choice && (
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <label className="flex items-center gap-1.5">
-              <span className="text-muted">{t("language")}</span>
-              <select className="rounded-full border border-line bg-card-2 px-2 py-1" value={want} onChange={(e) => setTextLang(e.target.value)}>
-                {LANGS.map((l) => {
-                  const has = plex.translations.some((x) => !x.is_root && x.lang === l.code);
-                  return (
-                    <option key={l.code} value={l.code}>
-                      {l.label}
-                      {has ? "" : " —"}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            {choice.options.length > 1 && (
-              <label className="flex items-center gap-1.5">
-                <span className="text-muted">{t("translator")}</span>
-                <select className="max-w-[12rem] rounded-full border border-line bg-card-2 px-2 py-1" value={current?.author_uid} onChange={(e) => setAuthor(e.target.value)}>
-                  {choice.options.map((o) => (
-                    <option key={o.author_uid} value={o.author_uid}>
-                      {o.author}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <div className="ml-auto flex gap-2">
-              <button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={onSave} disabled={!shownBlocks}>
-                {savedOk ? <BookmarkCheck className="h-4 w-4 text-gold" /> : <BookmarkPlus className="h-4 w-4" />}
-                <span className="hidden sm:inline">{savedOk ? t("savedOk") : t("saveOffline")}</span>
-              </button>
-              <button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={onDownload} disabled={!shownBlocks} aria-label={t("download")}>
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("download")}</span>
-              </button>
+
+        {current?.auto && <p className="text-xs text-gold">{t("autoNote")}</p>}
+        {translating && (
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <span>{t("translating")}</span>
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-card-2">
+              <div className="h-full bg-gold transition-all" style={{ width: `${(translating.done / Math.max(1, translating.total)) * 100}%` }} />
             </div>
           </div>
         )}
-        {choice?.fellBack && (
-          <p className="text-xs text-muted">{t("fallbackNotice", { lang: langLabel(want), fallback: langLabel(choice.lang) })}</p>
-        )}
+        {choice?.fellBack && <p className="text-xs text-muted">{t("fallbackNotice", { lang: langLabel(want), fallback: langLabel(choice.lang) })}</p>}
         {plex && !choice && <p className="text-xs text-muted">{t("noTranslation")}</p>}
-        {mode !== "read" && effView === "both" && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted">{t("listenWhat")}:</span>
-            <button className="chip" aria-pressed={listenTo === "both"} onClick={() => setListenTo("both")}>
-              {t("pali")} + {t("meaning")}
-            </button>
-            <button className="chip" aria-pressed={listenTo === "translation"} onClick={() => setListenTo("translation")}>
-              {t("meaning")}
-            </button>
-            <button className="chip" aria-pressed={listenTo === "pali"} onClick={() => setListenTo("pali")}>
-              {t("pali")}
-            </button>
-          </div>
-        )}
-        {mode === "readlisten" && <PlayerBar p={player} />}
       </div>
+
+      {/* Player: floats above the bottom bar on phones, sticks under the header on larger screens */}
+      {mode === "readlisten" && (
+        <div className="fixed inset-x-0 bottom-[calc(4.1rem+env(safe-area-inset-bottom))] z-30 px-2 md:sticky md:top-[4.5rem] md:bottom-auto md:mb-6 md:px-0">
+          <PlayerBar p={player} compact />
+        </div>
+      )}
 
       {!shownBlocks ? (
         <Spinner />
       ) : mode === "listen" ? (
         <ListenView p={player} shown={speechSource[player.index]?.shown ?? ""} pali={!!speechSource[player.index]?.isPali} size={size} />
       ) : (
-        <div ref={containerRef} className="reading mx-auto max-w-3xl" style={{ fontSize: size }}>
+        <div ref={containerRef} className={`reading mx-auto max-w-3xl ${mode === "readlisten" ? "pb-32 md:pb-0" : ""}`} style={{ fontSize: size }}>
           {effView === "both" && !aligned ? (
             <div className="grid gap-8 lg:grid-cols-2">
-              <div>
+              <div className="order-2 lg:order-1">
                 <h2 className="mb-3 font-sans text-sm font-semibold uppercase tracking-wider text-gold">{t("paliText")}</h2>
                 <Blocks list={paliList ?? []} show="pali" script={script} speakingId={currentEntry?.isPali ? speakingId : undefined} onClick={clickBlock} />
               </div>
-              <div>
+              <div className="order-1 lg:order-2">
                 <h2 className="mb-3 font-sans text-sm font-semibold uppercase tracking-wider text-gold">{current?.lang === "si" ? t("sinhalaMeaning") : t("meaning")}</h2>
                 <Blocks list={shownBlocks} show="text" script={script} speakingId={currentEntry && !currentEntry.isPali ? speakingId : undefined} onClick={clickBlock} />
               </div>

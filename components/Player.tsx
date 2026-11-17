@@ -80,16 +80,16 @@ export function usePlayer(items: SpeechItem[]) {
 
 const RATES = [0.75, 1, 1.25, 1.5];
 
-export function PlayerBar({ p, big = false, label }: { p: PlayerState; big?: boolean; label?: string }) {
+export function PlayerBar({ p, big = false, compact = false, label }: { p: PlayerState; big?: boolean; compact?: boolean; label?: string }) {
   const { t } = useApp();
   if (!p.supported) return <p className="rounded-xl border border-line p-3 text-sm text-muted">{t("noSpeech")}</p>;
 
   const pct = p.count ? ((p.index + (p.playing ? 0.5 : 0)) / p.count) * 100 : 0;
-  const btn = big ? "h-14 w-14" : "h-11 w-11";
-  const main = big ? "h-20 w-20" : "h-14 w-14";
+  const btn = big ? "h-14 w-14" : compact ? "h-10 w-10" : "h-11 w-11";
+  const main = big ? "h-20 w-20" : compact ? "h-12 w-12" : "h-14 w-14";
 
   return (
-    <div className={big ? "" : "glass rounded-2xl p-3 shadow-[var(--shadow)]"}>
+    <div className={big ? "" : `glass rounded-2xl ${compact ? "px-3 py-2" : "p-3"} shadow-[var(--shadow)]`}>
       <div className={`flex items-center ${big ? "justify-center gap-5" : "gap-2"}`}>
         <button className={`btn btn-ghost ${btn} p-0`} onClick={p.prev} aria-label={t("previous")}>
           <SkipBack className="h-5 w-5" />
@@ -100,7 +100,7 @@ export function PlayerBar({ p, big = false, label }: { p: PlayerState; big?: boo
         <button className={`btn btn-ghost ${btn} p-0`} onClick={p.next} aria-label={t("next")}>
           <SkipForward className="h-5 w-5" />
         </button>
-        {!big && (
+        {!big && !compact && (
           <button className={`btn btn-ghost ${btn} p-0`} onClick={p.stop} aria-label={t("stop")}>
             <Square className="h-4 w-4" />
           </button>
@@ -121,7 +121,7 @@ export function PlayerBar({ p, big = false, label }: { p: PlayerState; big?: boo
           </select>
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className={`${compact ? "mt-2" : "mt-3"} flex items-center gap-3`}>
         <input
           type="range"
           min={0}
@@ -136,7 +136,7 @@ export function PlayerBar({ p, big = false, label }: { p: PlayerState; big?: boo
           {Math.min(p.index + 1, p.count)} / {p.count}
         </span>
       </div>
-      <DownloadAudio p={p} name={label} />
+      {!compact && !big && <DownloadAudio p={p} name={label} />}
       {label && <p className="mt-2 text-center text-xs text-muted">{label}</p>}
       {p.missing.length > 0 && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-saffron/10 p-2.5 text-xs text-muted">
@@ -149,7 +149,7 @@ export function PlayerBar({ p, big = false, label }: { p: PlayerState; big?: boo
 }
 
 /** Records the spoken text into one MP3 file the user can keep (plays in VLC or any player). */
-function DownloadAudio({ p, name }: { p: PlayerState; name?: string }) {
+export function DownloadAudio({ p, name }: { p: PlayerState; name?: string }) {
   const { t } = useApp();
   const [prog, setProg] = useState<{ done: number; total: number } | null>(null);
   const ctrl = useRef<AbortController | null>(null);
@@ -170,8 +170,8 @@ function DownloadAudio({ p, name }: { p: PlayerState; name?: string }) {
   };
 
   return (
-    <div className="mt-3 flex items-center gap-2">
-      <button className="btn btn-ghost px-3 py-1.5 text-xs" onClick={run}>
+    <div className="flex items-center gap-2">
+      <button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={run}>
         {prog ? <Square className="h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5 text-gold" />}
         {prog ? `${t("stop")} · ${Math.round((prog.done / prog.total) * 100)}%` : t("downloadAudio")}
       </button>

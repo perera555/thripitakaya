@@ -23,7 +23,7 @@ function WheelSvg({ front }: { front: boolean }) {
   return (
     <svg viewBox="0 0 200 200" className="h-full w-full">
       <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="200">
           <stop offset="0" stopColor="#fff1c2" />
           <stop offset="0.35" stopColor="#f6c453" />
           <stop offset="0.7" stopColor="#d48a12" />

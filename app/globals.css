@@ -81,6 +81,38 @@ body {
     var(--bg);
 }
 
+/* Samadhi Buddha (Anuradhapura, CC0) softly behind every page */
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/bg/samadhi-sm.webp") center 30% / cover no-repeat;
+  opacity: 0.13;
+  filter: saturate(0.6) sepia(0.35);
+  -webkit-mask-image: radial-gradient(120% 75% at 50% 35%, #000 25%, transparent 80%);
+  mask-image: radial-gradient(120% 75% at 50% 35%, #000 25%, transparent 80%);
+}
+@media (min-width: 768px) {
+  .ambient::after {
+    background-image: url("/bg/samadhi.webp");
+    background-position: center 25%;
+  }
+}
+:root[data-theme="light"] .ambient::after {
+  opacity: 0.09;
+}
+
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  border-radius: 2rem;
+  background: url("/bg/samadhi.webp") center 38% / cover no-repeat;
+  opacity: 0.38;
+  -webkit-mask-image: radial-gradient(85% 90% at 70% 45%, #000 30%, transparent 85%);
+  mask-image: radial-gradient(85% 90% at 70% 45%, #000 30%, transparent 85%);
+  pointer-events: none;
+}
+
 .text-gradient {
   background: linear-gradient(100deg, var(--gold-2), var(--gold) 40%, var(--saffron));
   -webkit-background-clip: text;

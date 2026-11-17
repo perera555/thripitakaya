@@ -64,7 +64,7 @@ function GathaCard({ g }: { g: Gatha }) {
           </div>
           <div className={`mt-5 rounded-2xl border border-line bg-bg/40 p-4 ${what === "meaning" && p.playing ? "ring-1 ring-gold/50" : ""}`}>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gold">{lang === "si" ? t("sinhalaMeaning") : t("meaning")}</p>
-            <p className="reading">{pick(g.meaning, lang)}</p>
+            <p className="reading whitespace-pre-line">{pick(g.meaning, lang)}</p>
           </div>
           {g.note && <p className="mt-3 text-xs text-muted">{pick(g.note, lang)}</p>}
           <div className="mt-4">

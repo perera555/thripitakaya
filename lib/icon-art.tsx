@@ -15,7 +15,7 @@ export function IconArt({ size, padding = 0.14 }: { size: number; padding?: numb
     >
       <svg width={inner} height={inner} viewBox="0 0 200 200">
         <defs>
-          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="200">
             <stop offset="0" stopColor="#fff1c2" />
             <stop offset="0.4" stopColor="#f6c453" />
             <stop offset="1" stopColor="#c27410" />
