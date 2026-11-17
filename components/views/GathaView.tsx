@@ -33,7 +33,7 @@ function GathaCard({ g }: { g: Gatha }) {
   const p = usePlayer(items);
 
   return (
-    <article id={g.slug} className="card3d scroll-mt-24 p-5 sm:p-6">
+    <article id={g.slug} className="card3d min-w-0 scroll-mt-24 p-5 sm:p-6">
       <button className="flex w-full items-start gap-4 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-card-2 text-2xl shadow-[0_0_25px_rgba(244,185,66,0.25)]">{g.icon}</span>
         <span className="min-w-0 flex-1">

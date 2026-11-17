@@ -16,11 +16,11 @@ export type Gatha = {
 const L = (si: string, en: string, ta: string, es: string): Localized => ({ si, en, ta, es });
 
 export const GATHA_GROUPS: { key: Gatha["group"]; name: Localized }[] = [
+  { key: "deities", name: L("එක් එක් දෙවියන්ට පින් දීම", "Merit for each deity", "ஒவ்வொரு தெய்வத்துக்கும் புண்ணியம்", "Méritos para cada deidad") },
   { key: "vandana", name: L("තෙරුවන් වන්දනා", "Homage to the Triple Gem", "மும்மணி வணக்கம்", "Homenaje a la Triple Joya") },
   { key: "puja", name: L("පූජා ගාථා", "Offering verses", "பூஜை பாடல்கள்", "Versos de ofrenda") },
   { key: "places", name: L("පූජනීය ස්ථාන හා ශ්‍රාවක වන්දනා", "Sacred places & great disciples", "புனித இடங்களும் சீடர்களும்", "Lugares sagrados y grandes discípulos") },
   { key: "jaya", name: L("ජය මංගල හා ශාන්ති", "Victory blessings & shānthi", "வெற்றி ஆசீர்வாதங்கள்", "Bendiciones de victoria") },
-  { key: "deities", name: L("එක් එක් දෙවියන්ට පින් දීම", "Merit for each deity", "ஒவ்வொரு தெய்வத்துக்கும் புண்ணியம்", "Méritos para cada deidad") },
   { key: "devata", name: L("දෙවි දේවතාවන්ට පින් දීම හා ආරක්ෂාව", "Devas: invitation, merit & protection", "தேவர்கள்: அழைப்பு, புண்ணியம், பாதுகாப்பு", "Devas: invitación, méritos y protección") },
 ];
 

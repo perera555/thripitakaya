@@ -1,5 +1,5 @@
 /* Tripitaka service worker: offline app shell, cached texts and thumbnails. */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
 const TEXTS = "texts"; // SuttaCentral API responses (kept across versions)

@@ -246,6 +246,7 @@ const S = {
   },
   meaning: { si: "අර්ථය", en: "Meaning", ta: "பொருள்", es: "Significado" },
   playAll: { si: "සියල්ල අසන්න", en: "Play all", ta: "அனைத்தையும் கேள்", es: "Reproducir todo" },
+  deityMerit: { si: "දෙවියන්ට පින් දීම", en: "Merit for deities", ta: "தெய்வங்களுக்குப் புண்ணியம்", es: "Méritos para deidades" },
   reviews: { si: "අදහස් හා ඇගයීම්", en: "Reviews", ta: "மதிப்புரைகள்", es: "Opiniones" },
   reviewsDesc: {
     si: "ඔබේ අදහස, යෝජනා හා ඇගයීම මෙහි ලියන්න",

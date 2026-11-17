@@ -25,6 +25,13 @@ const TILES: { href: string; title: StringKey; desc: StringKey; icon: string; hu
   { href: "/install", title: "install", desc: "installDesc", icon: "📲", hue: 180 },
 ];
 
+const QUICK: { href: string; key: StringKey; icon: string }[] = [
+  { href: "/gatha#grp-deities", key: "deityMerit", icon: "🙏" },
+  { href: "/reviews", key: "reviews", icon: "⭐" },
+  { href: "/jataka", key: "jataka", icon: "🦚" },
+  { href: "/pirith", key: "pirith", icon: "🪷" },
+];
+
 export function HomeView() {
   const { t, lang } = useApp();
   const [day, setDay] = useState<{ i: number; label: string } | null>(null);
@@ -56,6 +63,16 @@ export function HomeView() {
           <p className="mt-1.5 text-sm font-semibold text-gold-2">සාධු! සාධු! සාධු!</p>
         </div>
       </section>
+
+      {/* Quick shortcuts */}
+      <nav className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label={t("menu")}>
+        {QUICK.map((q) => (
+          <Link key={q.href} href={q.href} className="card3d tilt flex items-center gap-3 p-3 sm:p-4">
+            <span className="text-2xl" aria-hidden>{q.icon}</span>
+            <span className="text-sm font-semibold leading-snug">{t(q.key)}</span>
+          </Link>
+        ))}
+      </nav>
 
       {/* Hero */}
       <section className="relative grid items-center gap-6 py-6 md:grid-cols-[1.1fr_1fr] md:gap-8 md:py-12">
